@@ -1,0 +1,523 @@
+EXPLORING OLD UNIXES
+
+INTRODUCTION
+
+I recently bid on a PDP-11/70 and a VAX-11/730.  I don't expect to win
+either of those bids, but I thought I'd spend some recreational time
+installing operating systems on (emulated) PDP-11s to get more familiar
+with the architecture.  I run an OpenVMS system on an emulated VAX and
+have installed NetBSD on it as well, so I feel like I'm already pretty
+familiar with the VAX architecture.
+
+I also have an 11/23 in need of restoration.  Once I trace its power
+supply problems (it keeps blowing fuses) it's probably just going to run
+RT-11 since it only has an RX-02 drive, 256KB of memory, and no MMU.  I
+think I can initially boot it from tu58fs and then build an RT-11 boot
+floppy pretty easily, and then that's about as far as that one goes.
+RT-11 is basically like DOS or CP/M: little, single-foreground-process,
+command-line interface.  Boot it, swap floppies, and load your BASIC
+environment or MACRO-11 or whatever.  It doesn't take long to feel like
+you've basically seen what it's about.
+
+It's the larger PDP-11s that are a bit more interesting, and I thought
+I'd give the various Unixes available for them a try with SIMH.  Think
+of this as a companion piece to my review of The Unix-Hater's Handbook
+(https://athornton.dreamwidth.org/14272.html), with a similar
+methodology: try it out and see what it feels like these days.  I'm
+going to go chronologically by version, rather than by the order I tried
+them in.
+
+It's worth remembering that Unix was developed as, basically, a
+word processing and typesetting system for production of Bell Labs
+patent documents: the system existed to support "roff", a descendant of
+Multics "runoff".  The syntax of "roff" is basically the same
+typesetting language that still exists in man pages today.  If you have
+a Unix-like system handy, say MacOS or Linux, open a terminal and type
+"man roff" (if that doesn't work, try "man groff") and you'll find out
+about the historical environment for which Unix was developed, delivered
+to you through that very text processing pipeline, almost 50 years later.
+
+PDP-7 UNIX
+
+The earliest Unix available, and very nearly the earliest Unix, period,
+is a pre-v1 Unix for an 8kword (words are 12 bits) PDP-7.  SIMH supports
+the PDP-7 nicely.  This version is basically an archaeological
+reconstruction.  A lot of the original material has been lost, and
+there's a project on GitHub that builds a runnable system:
+https://github.com/DoctorWkt/pdp7-unix .
+
+The runnable system build relies on a hosted toolchain to assemble
+sources and to build a filesystem image.  Once it's done that, you can
+boot from a paper tape and get a shell (kind of) inside the Unix
+kernel.  It's also got a DCI interface for a serial-attached terminal,
+which SIMH presents as a TCP port, so you can telnet to that port and
+work from a terminal that is not the system console, if you like.
+
+The user experience here isn't much like Unix.  Directories don't work
+like they later would--rather than a hierarchical filesystem as such,
+you link things from other directories (there is, I think, only one
+layer of directories) into your current directory.  Good old "ed" is at
+least familiar enough to use, so you can create a file and then put it
+on the console with "cat".  "ls" works; "ls -l" is even there.  It took
+me a while to figure out that "rm" was "chrm" and required a first
+argument of the directory from which to remove the file.
+
+Once it's booted, it's possible to reassemble the kernel, which results
+in a 5767 word(?) file.  I have no idea from there how to install the
+kernel in a bootable location, but presumably that's possible.
+
+UNIX V1 KERNEL WITH V2 USERLAND
+
+From here on out we're looking at the PDP-11: a sixteen-bit
+architecture, with various schemes to allow 18 or 22-bit physical
+addresses and various methods to overlay physical address ranges into
+the 16-bit space.
+
+This particular Unix is the earliest PDP-11 Unix available, and
+basically the earliest there is, although the userland is v2 rather than
+v1.  It runs on a 32KB PDP-11/20.
+
+This one also relies on a GitHub project to build a bootable system.
+https://github.com/jserv/unix-v1 is the repository.  It functions much
+the same as the PDP-7 version, but from significantly more complete
+sources.  You build a cross-assembler and a filesystem creation tool,
+assemble a kernel, and then load it by depositing a bootloader at a
+particular memory location.  In SIMH this is loading a binary file into
+the simulator; I think you would have had to toggle this into the front
+panel to cold-boot Unix on a real PDP-11/20.  (Once cold-booted, there's
+a bootloader that gets copied to the warm-boot area of the disk, so if
+it's not completely powered down, a restart would be much easier.)
+
+Version 1 feels significantly more like Unix, mostly because of the
+hierarchical filesystem.  You use chdir (not cd, and I can almost
+guarantee you will type "cd" the first time almost every time you try to
+change directories) and slash-separated paths to move around; most of
+the devices in /dev look familiar ("mem", "tty", "tty[0-8]", "tap[0-7"],
+and so forth); the passwd file is in a colon-separated format.
+
+As far as I can tell there's not anything in the way of terminal
+handling yet, and pipes won't show up for a couple versions yet, but the
+shell is mostly-familiar, there's a userspace tape-handling program, and
+quite a few of the utilities we know and love ("who", "wc", "sort",
+"od", "nm", etc.) and, maybe most importantly, there's a C compiler.
+
+It's a pre-K&R C (described at
+https://www.tuhs.org/Archive/Distributions/Research/Dennis_v3/Readme.nsys)
+which is kind of interesting.  It lets you play even faster and looser
+with char-to-int-to-pointer casts than K&R, and "+=" is backwards, but
+it's recognizably C.
+
+It only produces files named a.out, so you have to move the file into
+place yourself, but there's a script to build the last1120c compiler,
+which can, once built with that script, build itself.  DMR's page at
+https://www.bell-labs.com/usr/dmr/www/primevalC.html talks a bit about
+it.  Fascinating stuff, and this system manages to feel Unixy in a way that the
+PDP-7 version just didn't.  Like it, you get some terminal devices,
+although lacking a screen handling library, you're still pretty much
+using a teletype, whether at the system console or not.
+
+THE GAP
+
+As far as I was able to determine, there are no V2 kernels, and no V3 or
+V4 Unix, that survive in an easily-runnable form.  This is too bad,
+because two of the very Unixy things happened during this gap.
+
+The first is that Doug
+McIlroy twisted Dennis Ritchie's arm into introducing pipes to Unix
+during the v3 period, although separating pipe syntax from redirection
+by using "|" rather than ">" didn't appear until V4.  That made
+composability of small, sharp tools easy.  If you read the "roff" man
+page earlier, you may have noticed the section "The roff Pipe" which
+talks about the use of a pipeline in the text-formatting role for which
+Unix was designed, in which pre- and post-processors, chained together
+with pipes, perform tasks within the typesetting workflow such as
+rendering tables ("tbl") or equations ("eqn") within the overall markup
+processing.
+
+The second and arguable even more crucial item, is that V4 marks the
+point at which Unix was rewritten in C, making ports to architectures
+other than the PDP-11 contemplatable.  This, however, was not actually
+done until V6.
+
+It *is* possible, with a good deal of elbow grease, to run a V3 system:
+that V3 "Readme.nsys" describes how, armed with a V5 system, you could
+take the "nsys" tape image as modified by Warren Toomey and produce a V3
+system on a V5 filesystem, that would mostly work.  That said, the v3
+you get doesn't have the pipe() system call and therefore doesn't have
+the thing that distinguishes the environment--and arguably Unix As We
+Know It--the most from the V1/V2 we already have.  I have not myself
+made the effort to run it.
+
+The late, great Mike Mahoney (disclaimer: he was my thesis advisor for
+the Ph.D. I never completed) did an interview with Doug McIlroy that's
+still hosted on the Princeton History of Science web pages, that tells a
+gorgeous story about pipes and about how the evolution of the "Unix
+philosophy" was a combined...not really effort, more of a jazz-riffing
+combination of Doug, Brian, Ken, and Dennis all playing together.  It's
+at https://www.princeton.edu/~hos/mike/transcripts/mcilroy.htm and you
+should read it.  There are also interviews with Brian, Ken, and Dennis,
+and you should read those too.  The thing is, the index page doesn't
+point to the right pages, so you follow the same pattern: 
+https://www.princeton.edu/~hos/mike/transcripts/<lastname>.htm, where
+"<lastname>" is replaced by one of "kernighan", "thompson", or
+"ritchie".
+
+It's also in the Unix V4 manual that we are proudly told "there are now
+more than 20 Unix installations."  In 2019 I'm willing to bet there are
+more than two *billion* Unix installations, if we count Linux and
+thereby Android as Unix (which we absolutely should).  The majority of
+them are Android devices, in second place we have iOS (which, like
+MacOS, is basically a BSD userland atop a Mach kernel), and non-Android
+Linux runs a distant third.  Everything else is down in the noise, but
+it's worth noting that Microsoft Windows now ships Windows Subsystem For
+Linux, which means there's very little out there these days with
+anything you could call a general-pupose OS (which, as computing gets
+cheaper, becomes smaller and smaller and sillier and sillier devices)
+that doesn't have some Unix somewhere in it.
+
+A SLIGHT DIGRESSION (OR IS IT?)
+
+While I was writing this, I came upon the new (at the time of writing)
+paper "A fork() in the road" at
+https://www.microsoft.com/en-us/research/uploads/prod/2019/04/fork-hotos19.pdf
+.
+
+Its basic thesis is "fork() considered harmful" but it's very
+interesting to consider in terms of the Unix philosophy as we're playing
+with these early Unixes.
+
+It is probably true that fork() is no longer the best way to do process
+management if you have complex user-facing applications with many
+threads of control inside a single process.
+
+Which, er, is why we have posix_spawn(), which gives a lot more control
+to the user over how the process works.  But it's a kind of funny place
+we've ended up in.
+
+It's not obvious from a modern perspective, but if you look at process
+creation and *especially* passing open filehandles between parent and
+child processes in other late 1960s/early 1970s designs, it's a mess.
+
+Unix did something very elegant with fork(): it's a complete copy of the
+first program, including its open file descriptors.  The only difference
+is the return code, which lets the process determine if it's the parent
+or the child (or if the call failed).  Traditionally then the child
+would immediately exec() to replace the in-memory process image with one
+loaded from disk--but retaining the same open file descriptors.
+
+This is an amazingly easy way to do it compared to...pretty much all of
+Unix's contemporaries.  And in a model where a process was expected to
+do one thing, and that thing was generally: take input on stdin;
+transform that input somehow; put output on stdout; put errors, if any,
+on stderr, then that's a wonderful fit.
+
+But in today's world, because we have billions of Unix devices, the
+predominant applications are no longer byte-stream transformers.  They
+are user-facing, multithreaded, interactive applications, for which
+fork() really isn't a very appropriate model after all.
+
+Nevertheless, the authors draw the wrong conclusion entirely.  It's a
+whole lot easier to explain fork() than posix_spawn(); it's perfectly
+fair to say, though, "if you're writing a mobile app, which
+statistically you probably are, don't do process creation the old-school
+way anymore."
+
+But isn't it weird and wonderful that a system that was designed for
+sequential stages of text processing (formatting patents for Bell Labs)
+has ended up in the position where it's running most of the world's
+handheld devices?
+
+UNIX V5
+
+The surviving V5 is a single disk image.  Consequently it's pretty easy
+to get going.  Of note here is that there's now a disk bootloader; no
+need to feed the system a paper tape, or deposit a bootloader into
+memory with the front panel.  You just have an RK05 image, you boot from
+the RK05 device, and when it says "@" you type "unix" (which loads /unix
+into memory) and away you go.
+
+Once you're there...it's a Unix system.  The command "cd" is
+still spelled "chdir".  It doesn't seem to have "tar" or "tap", and
+there's no "man" yet.  The lack of man pages means that the behavior of
+"stty" is still mysterious, but finally there's source code (in
+/usr/source/s2/stty.c), but you can't do very much with it, not even set
+the baud rate.
+
+The kernel is a whopping 25802 bytes.  There's "sync" but no "halt", so
+finally you can at least type "sync" three times (the second and third are
+to give your fingers something to do while the disk is actually syncing)
+before you pull the plug (or, much more likely, type Control-E to break
+to the SIMH command line, and type "q").
+
+I think with a good bit more work this image *could* have a lot of
+software built for it and it would be a pretty useful Unix, but the
+image that is available and easy for hobbyists to run isn't really it.
+So I pretty quickly moved on.
+
+UNIX V6
+
+There are two primary reasons V6 is known and remembered.  The first is
+John Lions' magnificent opus
+"https://en.wikipedia.org/wiki/Lions%27_Commentary_on_UNIX_6th_Edition,_with_Source_Code". 
+Distributed as _samizdat_ for many, many years, it's how people just a
+tiny bit older than me first learned about Unix internals; I first saw
+it in nth-generation photocopied form in a three-ring binder, but didn't
+actually get a copy of my own until the 1996 release of the Peer-to-Peer
+Communications version.  It's still a wonderful read; the 6th edition
+source is clear and lucid (but still very much terse C which doesn't
+care much about fussy distinctions between ints and pointers), and the
+explanatory commentary is masterful.  If you're interested in the
+construction of elegant systems in constrained spaces, you should read
+it.  A number of free softcopy versions are linked from the Wikipedia
+article.
+
+The second reason is that it was the first Unix to be ported to
+something other than a PDP-11; in this case the Interdata 7/32, which
+was a 32-bit platform.  You can run that as well in SIMH, but I stuck
+with the PDP-11.
+
+This Unix is the first to be installed in SIMH more or less as you would
+have done it on the real iron.  Instructions are at
+http://gunkies.org/wiki/Installing_Unix_v6_(PDP-11)_on_SIMH, and it goes
+like this: you tell SIMH your tape image is write-locked, attach three
+rk06 drives, toggle in a six-word octal sequence that's a minimal tape
+bootloader, and run that to slurp the beginning of the install tape into
+low memory.  Having done that, you jump to address 0 and that puts you
+into a standalone tape-to-disk restore program.  You copy a boot block
+from tape to the first disk's first block, copy the rest of the root
+filesystem image to the rest of the disk, and then boot from the disk.
+
+That gets you a single-user Unix.  Rebuild the kernel (this is a time
+before scripting languages, so you build a little C program that accepts
+a very terse definition of devices you want to build into the kernel on
+stdin, which then builds a little assembly language routine that
+specifies the available devices).  Move the resulting kernel (30346
+bytes, if you're doing the stock SIMH install) into place at /unix,
+build your devices with mknod, use dd to copy the next couple of tape
+files to /usr/src and /usr/doc (on the second and third rk06 devices),
+put the mount statements in /etc/rc (yes, a time before
+/etc/fstab!)...and generally do a bunch of other stuff to turn your
+system into a workable multiuser Unix system.
+
+This is very recognizable as installing a Unix system from scratch.  You
+can imagine needing to do this in a modern context if for some reason
+you needed to install a system with truly minimal distribution media and
+no network; it's not that much worse than bringing up Linux in the
+mid-1990s before distributions were really a thing.
+
+There's *still* no "halt", "cd" is *still* spelled "chdir", but at least
+"stty" lets you set a reasonable bit rate on your terminal and remap
+erase and kill.  You still have to use Control-? as break.
+
+In any event, it's about time to move on.
+
+UNIX V7
+
+Version 7 is the Big Dog.  There's a contingent that stridently insists
+that this is the last *real* Unix before AT&T commercialized it and
+screwed everything up and kicked off the fragmentation that became the
+Unix Wars.  It is the last Research Unix from Bell Labs.
+
+You install this one from the install tape (this time, no toggled
+bootloader needed).  You format your disks with the first non-bootstrap
+file on the tape (users of more modern Unixes may be surprised that
+there's no partitioning step; there were not very many varieties of disk
+and their geometries are hardcoded, so the system knows how big your
+rp06 is and there's no way to split it into multiple partitions that I
+know of), restore the root partition from the next, boot the
+kernel into single-user mode, and proceed pretty much as before.
+
+There are already some nifty convenience features: there's a makefile in
+/dev which creates a bunch of devices for you, for instance.  The "stty"
+program *finally* accepts '^h' for an erase character and knows it means
+Control-H.  Most importantly, from my perspective, "cd" works, but it's
+also really nice that "man" is installed.  The shell is, finally, Bourne
+shell.  The C compiler is the language described in the "white
+book"--that is, K&R C at last.
+
+There's still no "halt".  Sync three times and pull the plug.
+
+Good old /usr/include is there too.  While V7 doesn't ship with
+"curses.h" I'm sure it's available...although you'll note there's
+something very very important to Unix that has been missing all through
+this narrative, and is still missing here.
+
+Right.  There's no TCP/IP stack.
+
+This isn't actually that big a deal; there were multiple implementations
+of TCP/IP for V7, and "tar" is present in all its glory, so it wouldn't
+actually be that much work to take an implementation, tell SIMH to treat
+the tarball as a tape device, and it's K&R C, which I speak reasonably
+fluently.  It's nice that "make" is already there, too.
+
+The primary impediment is that the system editor is *still* "ed".
+
+V7 is a thoroughly usable Unix.  If you've used one of the minimal
+containerization-focused Linuxes, where you get busybox (and a shell
+that is much closer to Bourne than to bash) and not much else, and
+imagine that with development environments (you also get F77 in V7),
+you're not far off in terms of feel.
+
+It is in fact so usable that I have followed some instructions from the
+'net to replace the included serial driver (DCI) with the DZ driver,
+which is interrupt driven and therefore doesn't burn a CPU spinning and
+polling.  The tricky bit was driving ed and sed to edit some assembly
+files; compiling the driver and linking into the kernel was child's
+play.  My v7 kernel is now 54866 bytes, so you can see the bloat
+beginning to happen.
+
+But most of the reason I didn't worry about TCP/IP for V7 was that it
+was just easier to install the next and final PDP/11 Unix in my survey.
+
+2.11BSD 
+
+This is the end of the line.  I leapfrogged a bunch of other Unixes that
+would run on the PDP-11.  2.11BSD was released in 1992, so it's
+basically contemporaneous with the release of Linux on the i386.
+
+Installation is still a lot like V7.  Boot from tape, do disk
+partitioning from the first file on tape (you still, in 1992, had to
+know your disk geometry and calculate sector ranges and stuff yourself),
+format your disks with the second file, use the third file to restore
+the fifth file to the root partition, and then boot your system from the
+disk to restore the rest of the partitions (/usr and /usr/src).
+
+It's a little odd; the console comes up in single-user mode and you have
+to exit the resulting shell to go to multiuser.  I didn't bother to set
+up terminal devices, because 2.11BSD comes with a TCP/IP stack.  I'm
+running mine on an emulated PDP-11/70 with 3MB of memory, and SIMH uses
+the Linux tap device to create a virtual ethernet.  So I can just telnet
+to the machine.
+
+This is a modern Unix.  If you've used a BSD, you know how to drive
+this.  Kernel source is in /usr/src/sys, the configs live in the "conf"
+subdirectory, you copy GENERIC to the name of your choice, and edit a
+bunch of configuration statements, which are largely whether you have
+any of a particular kind of peripheral, and if so, how many.
+
+Since this is a modern Unix, you've got vi, so you don't need to grit
+your teeth and struggle with ed anymore.  Rebuilding the kernel is as
+easy as editing your config in /usr/src/sys/conf, running "config" in
+the same directory with the name of your config as its argument,
+changing to the directory thus created, and running "make" followed by,
+if successful, "make install".
+
+However, we can also see why this is the end of the line.  If you're
+doing much--for instance, recompiling Adventure--you're going to be
+getting a bunch of messages like this:
+
+May 28 13:31:06 pdp11bsd vmunix: coremap: overflow, lost 560 clicks at 055755
+May 28 13:31:06 pdp11bsd vmunix: coremap: overflow, lost 608 clicks at 057035
+May 28 13:31:06 pdp11bsd vmunix: coremap: overflow, lost 446 clicks at 044566
+May 28 13:31:06 pdp11bsd vmunix: coremap: overflow, lost 1 clicks at 012174
+
+What's going on here?  That 64K address space just isn't big enough,
+even with clever overlays and memory management, and even when
+instructions and data live in separate segments.  You can tweak this in
+the kernel file param.c, but there's very little room to play.  I'm
+getting these errors all over the place with NBUF set to a conservative
+32, MAXUSERS a measly 4, and and NDE (DEC Ethernet) and NSL (Serial Line
+IP) enabled.  I would get a little more room back if I turned off SLIP,
+but the fundamental problem is that a kernel plus an Ethernet driver
+plus a TCP/IP stack doesn't leave a lot of room for user programs.
+
+And indeed we see that in the kernel image: /unix is 139573 bytes.
+2.11BSD and a TCP/IP stack is about far as we can push a 16-bit system.
+Of course, by 1992 PDP-11s were nearing the end of their lifespan as
+general-purpose computing machines (they survived for a great deal
+longer--some to the present day--in process control and industrial
+applications).  The availability of the Intel 386, a 32-bit extension of
+the 8086 architecture line, in inexpensive PCs, meant that by the early
+1990s you could run Unix or a Unix-like system on relatively inexpensive
+microcomputer (I installed Linux the first time in 1992 or 1993 on a 4MB
+i386 that I got when I went to college; I think the system cost around
+$2000 new).
+
+USABILITY
+
+This is largely a callback to my earlier review of The Unix Hater's
+Handbook (https://athornton.dreamwidth.org/14272.html).  In that I
+talked about Multics, TOPS-20, and ITS, three systems remembered very
+fondly in the early 1990s by people who hated Unix.
+
+I basically stand by what I said there, although I'm using ITS a bit
+more (I'm trying to port Frotz to it as part of my abiding fondness for
+Infocom games).  I still don't like it and I don't think DDT is a
+pleasant programming environment.
+
+However: where do these systems stand in usability with respect to very
+early Unixes, rather than one with all the modern conveniences of
+windowing systems and well-integrated networking and capable ANSI
+terminals?
+
+That in turn comes down to "which would I rather use?"
+
+Let's start from newest and work our way back.  I'm certainly more
+productive in 2.11BSD than I am in TOPS-20 or Multics.  Now, granted, a
+lot of that is that I am very comfortable in Unix, and the other two are
+pretty foreign to me.  But if I had to spend a week writing documents or
+code to perform a task in any of them, it'd be BSD.
+
+Would it be V7 Unix?  That's the interesting question.  I think it
+probably would, but I'd cheat.  The big thing it's missing out of the
+box (OK, OK, other than a networking stack) is a screen editor, and more
+generally sophisticated terminal handling.  But it in practice would not
+be that big a deal: I'd find a curses implementation for V7, I'd get it
+built, and then I'd get a screen editor built on top of that.  Give me
+vi and I can get by.  But of course I wouldn't use vi, I'd build an old
+Emacs.  Armed with Emacs and V7, I'd have an easier time than in TOPS-20
+or Multics.
+
+Strangely, I'm not sure I'd say the same about V5 or V6.  A lot of it's
+cosmetic but I feel like I'd have to do a lot more work to get the
+system in a shape I'd like to use.  The combination of having to write
+my own "cd" wrapper (OK, OK, that's not really hard), having a shell
+that isn't quite Bourne yet (as it were), a dialect of C that's not
+quite K&R, no "man"...effectively, I'd have to fight a lot to turn the
+userland into something resembling V7 before I wanted to use it, and I
+feel like it'd be more pleasant to just use Multics or TOPS-20.  V5 is
+still better than ITS.
+
+I can't say the same about V1 kernel plus V2 userland, or PDP-7 Unix.
+But both of these are the equivalent of the dinosaur skeleton that's
+mostly concrete with a few original bones imbedded in it.  Even so, I
+can't imagine that the original systems were much more functionally
+pleasant than their reconstructions.  I can do more in ITS than I can in
+them, and there's a better existing software library, and, crucially,
+several high-level languages.  Sure, ITS C is pre-K&R and is probably
+closest to V3 C, but it at least exists, as well as FORTH and LISP...and
+also LOGO if I feel an irresistable urge to do turtle graphics.
+
+CONCLUSION
+
+By V7 Unix was about as usable as Multics ever had been, in terms of the
+experience for a programming or engineering end-user.  It existed on
+machines that could be bought for a fraction of the price of the
+Honeywells that could run Multics in 1975, when 7th edition was
+released: the Honeywell 6180 cost about $7 million.  A well-specced
+PDP-11/45 would have been roughly 1% of that: $70,000.
+
+I have had less luck finding the price of a PDP-10, but it looks like
+large PDP-10 processors cost in the quarter-million dollar range, so
+it's probably not too wrong to figure that a PDP-10 beefy enough and
+with enough peripherals to run TOPS-20 happily (TOPS-20 wouldn't be
+released until 1976, but from this distance, that counts as
+contemporaneous with V7) is, logarithmically speaking, halfway between
+the Honeywell and the PDP-11: that is, on the order of $700,000.
+
+And ITS fans...I still think it's some weird combination of nerd
+snobbery, Stockholm Syndrome,
+back-in-my-day-uphill-both-ways-blizzardism, and blindingly rosy
+nostalgia goggles.  You could have an equivalently miserable experience
+elsewhere for a lot less money--which pretty much tracks what I have
+heard about the MIT experience in general, come to think of it.
+
+So I think my reaction to The Unix Haters' Handbook is still quite
+reasonable.  In some ways the user could get a better experience on a
+TOPS-20 or Multics system, and a given system could support many more
+users, but the price tag put these machines far out of reach for almost
+all of the customers who could afford a reasonably high-end PDP-11.
+Sure, the documentation was generally better and the overall feel a lot
+less scruffy, but given the price differential and the fact that the
+day-to-day user experience was just about as good...well, Ken and Dennis
+and Doug and Brian really knocked it out of the park, didn't they?
