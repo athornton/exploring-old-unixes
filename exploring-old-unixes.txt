@@ -257,8 +257,8 @@ So I pretty quickly moved on.
 UNIX V6
 
 There are two primary reasons V6 is known and remembered.  The first is
-John Lions' magnificent opus
-"https://en.wikipedia.org/wiki/Lions%27_Commentary_on_UNIX_6th_Edition,_with_Source_Code". 
+John Lions' magnificent opus, the _Commentary_.  Its Wikipedia page is
+https://en.wikipedia.org/wiki/Lions%27_Commentary_on_UNIX_6th_Edition,_with_Source_Code.
 Distributed as _samizdat_ for many, many years, it's how people just a
 tiny bit older than me first learned about Unix internals; I first saw
 it in nth-generation photocopied form in a three-ring binder, but didn't
@@ -428,10 +428,39 @@ general-purpose computing machines (they survived for a great deal
 longer--some to the present day--in process control and industrial
 applications).  The availability of the Intel 386, a 32-bit extension of
 the 8086 architecture line, in inexpensive PCs, meant that by the early
-1990s you could run Unix or a Unix-like system on relatively inexpensive
-microcomputer (I installed Linux the first time in 1992 or 1993 on a 4MB
-i386 that I got when I went to college; I think the system cost around
-$2000 new).
+1990s you could run Unix or a Unix-like system on a relatively
+inexpensive microcomputer (I installed Linux the first time in 1992 or
+1993 on a 4MB i386 that I got when I went to college; I think the system
+cost around $2000 new in 1990).
+
+THE SIMULATION ENVIRONMENT
+
+It's worth noting that my explorations here all happened on a Raspberry
+Pi Model 3.  That's a Linux computer.  It has a 4-core 32-bit ARM CPU
+running at about 1GHz, and it has 1GB of system memory.  It costs $35
+brand new (you do have to supply your own mass storage in the form of an
+SD card; a 16GB class 10 card is going for $6.40 at Amazon at the time
+of writing).  The case probably added another eight bucks, so total
+system price is about $50.  It's the size of a deck of playing cards.
+Power consumption is usually well under a watt and maximum draw is about
+five watts.
+
+The PDP-11 emulator running V7 is being a hog and consuming 12.2% of the
+CPU and 1.4% of the memory, while the Honeywell 6180 on the same machine
+running Multics is consuming 4.6% of one CPU core (remember, there are
+four cores) and 14.3% of the memory.  The TOPS-20 system is roughly
+2%/4% and ITS is using about 0.7%/0.7%.  So all three of the beloveds of
+the Unix Haters, plus a pretty big PDP-11/70, are collectively consuming
+about 6% of the total CPU and about a fifth of the total memory.
+
+Granted, those machines are basically idle; but even when an emulator
+consumes an entire CPU core, I can still run all four flat out at once.
+Response time is basically instantaneous; I am sure that performance of
+any of them is far better than it would have been on the actual machine.
+
+And, of course the system running these simulations is Linux, which is
+to say, fundamentally Unix.  Not bad for a 50-year-old typesetting
+system, really.
 
 USABILITY
 
@@ -485,8 +514,9 @@ can't imagine that the original systems were much more functionally
 pleasant than their reconstructions.  I can do more in ITS than I can in
 them, and there's a better existing software library, and, crucially,
 several high-level languages.  Sure, ITS C is pre-K&R and is probably
-closest to V3 C, but it at least exists, as well as FORTH and LISP...and
-also LOGO if I feel an irresistable urge to do turtle graphics.
+basically equivalent to the dialect that exists in the V2 userland, but
+it at least exists, as well as FORTH and LISP...and also LOGO if I feel
+an irresistable urge to do turtle graphics.
 
 CONCLUSION
 
@@ -521,3 +551,4 @@ Sure, the documentation was generally better and the overall feel a lot
 less scruffy, but given the price differential and the fact that the
 day-to-day user experience was just about as good...well, Ken and Dennis
 and Doug and Brian really knocked it out of the park, didn't they?
+
