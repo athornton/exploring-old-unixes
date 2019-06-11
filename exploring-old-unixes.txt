@@ -40,7 +40,7 @@ to you through that very text processing pipeline, almost 50 years later.
 PDP-7 UNIX
 
 The earliest Unix available, and very nearly the earliest Unix, period,
-is a pre-v1 Unix for an 8kword (words are 12 bits) PDP-7.  SIMH supports
+is a pre-v1 Unix for an 8kword (words are 18 bits) PDP-7.  SIMH supports
 the PDP-7 nicely.  This version is basically an archaeological
 reconstruction.  A lot of the original material has been lost, and
 there's a project on GitHub that builds a runnable system:
@@ -102,19 +102,20 @@ quite a few of the utilities we know and love ("who", "wc", "sort",
 "od", "nm", etc.) and, maybe most importantly, there's a C compiler.
 
 It's a pre-K&R C (described at
-https://www.tuhs.org/Archive/Distributions/Research/Dennis_v3/Readme.nsys)
-which is kind of interesting.  It lets you play even faster and looser
+https://www.tuhs.org/Archive/Applications/Early_C_Compilers/primevalC.html,
+and some idiosyncracies are mentioned in
+https://www.tuhs.org/Archive/Distributions/Research/Dennis_v3/Readme.nsys
+) which is kind of interesting.  It lets you play even faster and looser
 with char-to-int-to-pointer casts than K&R, and "+=" is backwards, but
 it's recognizably C.
 
 It only produces files named a.out, so you have to move the file into
 place yourself, but there's a script to build the last1120c compiler,
-which can, once built with that script, build itself.  DMR's page at
-https://www.bell-labs.com/usr/dmr/www/primevalC.html talks a bit about
-it.  Fascinating stuff, and this system manages to feel Unixy in a way that the
-PDP-7 version just didn't.  Like it, you get some terminal devices,
-although lacking a screen handling library, you're still pretty much
-using a teletype, whether at the system console or not.
+which can, once built with that script, build itself.  Fascinating
+stuff, and this system manages to feel Unixy in a way that the PDP-7
+version just didn't.  Like it, you get some terminal devices, although
+lacking a screen handling library, you're still pretty much using a
+teletype, whether at the system console or not.
 
 THE GAP
 
@@ -139,10 +140,11 @@ point at which Unix was rewritten in C, making ports to architectures
 other than the PDP-11 contemplatable.  This, however, was not actually
 done until V6.
 
-It *is* possible, with a good deal of elbow grease, to run a V3 system:
-that V3 "Readme.nsys" describes how, armed with a V5 system, you could
-take the "nsys" tape image as modified by Warren Toomey and produce a V3
-system on a V5 filesystem, that would mostly work.  That said, the v3
+It *is* possible, with a good deal of elbow grease, to run a system from
+between V3 and V4 (closer to V4, according to Warren Toomey): that V3
+"Readme.nsys" describes how, armed with a V5 system, you could take the
+"nsys" tape image as modified by Warren Toomey and produce a V4ish
+system on a V5 filesystem, that would mostly work.  That said, the V4-
 you get doesn't have the pipe() system call and therefore doesn't have
 the thing that distinguishes the environment--and arguably Unix As We
 Know It--the most from the V1/V2 we already have.  I have not myself
@@ -168,12 +170,12 @@ more than two *billion* Unix installations, if we count Linux and
 thereby Android as Unix (which we absolutely should).  The majority of
 them are Android devices, in second place we have iOS (which, like
 MacOS, is basically a BSD userland atop a Mach kernel), and non-Android
-Linux runs a distant third.  Everything else is down in the noise, but
-it's worth noting that Microsoft Windows now ships Windows Subsystem For
-Linux, which means there's very little out there these days with
-anything you could call a general-pupose OS (which, as computing gets
-cheaper, becomes smaller and smaller and sillier and sillier devices)
-that doesn't have some Unix somewhere in it.
+Linux runs a distant third.  Everything else except maybe MacOS is down
+in the noise, but it's worth noting that Microsoft Windows now ships
+Windows Subsystem For Linux, which means there's very little out there
+these days with anything you could call a general-pupose OS (which, as
+computing gets cheaper, becomes smaller and smaller and sillier and
+sillier devices) that doesn't have some Unix somewhere in it.
 
 A SLIGHT DIGRESSION (OR IS IT?)
 
@@ -258,8 +260,8 @@ UNIX V6
 
 There are two primary reasons V6 is known and remembered.  The first is
 John Lions' magnificent opus, the _Commentary_.  Its Wikipedia page is
-https://en.wikipedia.org/wiki/Lions%27_Commentary_on_UNIX_6th_Edition,_with_Source_Code.
-Distributed as _samizdat_ for many, many years, it's how people just a
+https://en.wikipedia.org/wiki/Lions%27_Commentary_on_UNIX_6th_Edition,_with_Source_Code
+.  Distributed as _samizdat_ for many, many years, it's how people just a
 tiny bit older than me first learned about Unix internals; I first saw
 it in nth-generation photocopied form in a three-ring binder, but didn't
 actually get a copy of my own until the 1996 release of the Peer-to-Peer
@@ -414,7 +416,8 @@ May 28 13:31:06 pdp11bsd vmunix: coremap: overflow, lost 1 clicks at 012174
 What's going on here?  That 64K address space just isn't big enough,
 even with clever overlays and memory management, and even when
 instructions and data live in separate segments.  You can tweak this in
-the kernel file param.c, but there's very little room to play.  I'm
+the kernel definitions in your configuration, and you can move overlay
+pieces around in the Makefile, but there's very little room to play.  I'm
 getting these errors all over the place with NBUF set to a conservative
 32, MAXUSERS a measly 4, and and NDE (DEC Ethernet) and NSL (Serial Line
 IP) enabled.  I would get a little more room back if I turned off SLIP,
@@ -431,7 +434,11 @@ the 8086 architecture line, in inexpensive PCs, meant that by the early
 1990s you could run Unix or a Unix-like system on a relatively
 inexpensive microcomputer (I installed Linux the first time in 1992 or
 1993 on a 4MB i386 that I got when I went to college; I think the system
-cost around $2000 new in 1990).
+cost around $2000 new in 1990.  I installed the brand-new and
+still-quite-shaky Linux rather than 386BSD (or was it BSD/386?) for the
+very pragmatic reason that Linux let me defragment my hard drive and
+repartition it so I could share the disk between DOS+Windows 3.0 and
+Linux; as an undergrad there was no way I could afford another disk).
 
 THE SIMULATION ENVIRONMENT
 
@@ -445,13 +452,14 @@ system price is about $50.  It's the size of a deck of playing cards.
 Power consumption is usually well under a watt and maximum draw is about
 five watts.
 
-The PDP-11 emulator running V7 is being a hog and consuming 12.2% of the
-CPU and 1.4% of the memory, while the Honeywell 6180 on the same machine
-running Multics is consuming 4.6% of one CPU core (remember, there are
-four cores) and 14.3% of the memory.  The TOPS-20 system is roughly
-2%/4% and ITS is using about 0.7%/0.7%.  So all three of the beloveds of
-the Unix Haters, plus a pretty big PDP-11/70, are collectively consuming
-about 6% of the total CPU and about a fifth of the total memory.
+The PDP-11 emulator running V7 is being a hog and consuming 12.2% of a
+CPU core and 1.4% of the memory, while the Honeywell 6180 on the same
+machine running Multics is consuming 4.6% of one CPU core (remember,
+there are four cores) and 14.3% of the memory.  The TOPS-20 system is
+roughly 2%/4% and ITS is using about 0.7%/0.7%.  So all three of the
+beloveds of the Unix Haters, plus a pretty big PDP-11/70, are
+collectively consuming about 6% of the total CPU and about a fifth of
+the total memory.
 
 Granted, those machines are basically idle; but even when an emulator
 consumes an entire CPU core, I can still run all four flat out at once.
@@ -493,19 +501,28 @@ box (OK, OK, other than a networking stack) is a screen editor, and more
 generally sophisticated terminal handling.  But it in practice would not
 be that big a deal: I'd find a curses implementation for V7, I'd get it
 built, and then I'd get a screen editor built on top of that.  Give me
-vi and I can get by.  But of course I wouldn't use vi, I'd build an old
-Emacs.  Armed with Emacs and V7, I'd have an easier time than in TOPS-20
-or Multics.
+vi and I can get by.  I'd prefer Emacs, and I presume Gosmacs or an
+early GNU Emacs exists in some form that will build on a PDP-11.  Armed
+with Emacs and V7, I'd have an easier time than in TOPS-20 or Multics.
+(Even armed with vi and V7, I'd have an easier time, but I'd resent not
+having the editor that I've now got more than 30 years of muscle memory
+for.)
 
-Strangely, I'm not sure I'd say the same about V5 or V6.  A lot of it's
-cosmetic but I feel like I'd have to do a lot more work to get the
-system in a shape I'd like to use.  The combination of having to write
-my own "cd" wrapper (OK, OK, that's not really hard), having a shell
-that isn't quite Bourne yet (as it were), a dialect of C that's not
-quite K&R, no "man"...effectively, I'd have to fight a lot to turn the
-userland into something resembling V7 before I wanted to use it, and I
-feel like it'd be more pleasant to just use Multics or TOPS-20.  V5 is
-still better than ITS.
+Also, it's basically the 7th Edition that Kernighan and Pike _The Unix
+Programming Environment_ documents, and like so many other people I read
+that book to pieces.  Because of that, probably more than anything else,
+7th Edition feels like home in a way the earlier ones don't.
+
+Maybe that's why I'm not sure I'd say the same about V5 or V6 being more
+comfortable than TOPS-20 or Multics.  A lot of it's cosmetic but I feel
+like I'd have to do a lot more work to get the system in a shape I'd
+like to use.  The combination of having to write my own "cd" wrapper
+(OK, OK, that's not really hard), having a shell that isn't quite Bourne
+yet (as it were), a dialect of C that's not quite K&R, no
+"man"...effectively, I'd have to fight a lot to turn the userland into
+something resembling V7 before I wanted to use it, and I feel like it'd
+be more pleasant to just use Multics or TOPS-20.  V5 is still better
+than ITS.
 
 I can't say the same about V1 kernel plus V2 userland, or PDP-7 Unix.
 But both of these are the equivalent of the dinosaur skeleton that's
@@ -550,5 +567,6 @@ all of the customers who could afford a reasonably high-end PDP-11.
 Sure, the documentation was generally better and the overall feel a lot
 less scruffy, but given the price differential and the fact that the
 day-to-day user experience was just about as good...well, Ken and Dennis
-and Doug and Brian really knocked it out of the park, didn't they?
+and Doug and Brian and Rob really knocked it out of the park, didn't
+they?
 
