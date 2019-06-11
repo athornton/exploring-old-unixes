@@ -470,6 +470,15 @@ And, of course the system running these simulations is Linux, which is
 to say, fundamentally Unix.  Not bad for a 50-year-old typesetting
 system, really.
 
+My editing stack is also Unix.  Specifically, it's MacOS Mojave 10.14.5,
+which is a BSD userland atop a Mach microkernel (but which provides all
+the usual BSD system calls through a compatibility layer).  I'm writing
+this in GNU Emacs 26.2, with line wraps injected at word breaks before
+72 columns by text mode with auto-fill, and when I'm done I'm going to
+format it for my blog with a tool that dates back to ancient days: "fmt"
+with an argument of "-w 9999" to make each paragraph a single line so
+the HTML rendererer can do its own job of layout.
+
 USABILITY
 
 This is largely a callback to my earlier review of The Unix Hater's
